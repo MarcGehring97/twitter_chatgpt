@@ -1,8 +1,12 @@
 """
-
-
-
 https://docs.tweepy.org/en/stable/client.html
+https://www.jcchouinard.com/python-automation-with-cron-on-mac/
+https://crontab.guru/
+
+sudo
+crontab -e > i > enter text > esc > :wq > enter
+crontab -r, contab -l
+* * * * * python3 /Users/Marc/Documents/GitHub/twitter_chatgpt/chatgpt.py
 """
 
 def chatgpt(prompt, key):
@@ -10,7 +14,7 @@ def chatgpt(prompt, key):
     import openai
     openai.api_key = key
 
-    # Generate a response
+    # generate a response
     completion = openai.Completion.create(engine="text-davinci-003", prompt=prompt, max_tokens=1024, n=1, stop=None, temperature=0.5)
     response = completion.choices[0].text
     
@@ -33,7 +37,15 @@ def tweet(text, client):
 
 def main(text=""):
 
+    import os
+    if text != "":
+        os.system("pip3 install random")
+        os.system("pip3 install tweepy")
+        os.system("pip3 install json")
+        os.system("pip3 install openai")
+
     import random, tweepy, json, openai
+
     keys = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_keys.json"))
     client1 = tweepy.Client(consumer_key=keys["consumer_key"], consumer_secret=keys["consumer_secret"], access_token=keys["access_token"], access_token_secret=keys["access_token_secret"])
 
@@ -44,6 +56,7 @@ def main(text=""):
 
     # the user ID of my actual account
     user_id = "1221912421566046210"
+    user_id = "25073877"
     # find out the user ID at https://tweeterid.com/
     tweets = get_tweets(user_id, client2)
     
@@ -55,7 +68,7 @@ def main(text=""):
     multi_tweets = multi_tweets[:-2]
 
     key = str(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/openai_key.txt").read())
-    prompt = "Get inspired by the following tweets and write another totally new tweet: " + multi_tweets
+    prompt = "Look at the following tweets and write another totally new tweet: " + multi_tweets
     # make the tweet sound good
     
     # a more simple prompt
@@ -68,7 +81,7 @@ def main(text=""):
         
         try:
             # refining the text with a second prompt
-            new_prompt = "Write a new coherent tweet out of this tweet: " + text
+            new_prompt = "Write a new coherent tweet out of this text, but don't make it a quote and also not only hashtags: " + text
             text = chatgpt(new_prompt, key)
         except Exception:
             print("The server is overloaded or not ready yet. The program will run again.")
@@ -77,13 +90,22 @@ def main(text=""):
 
     except Exception:
         print("The server is overloaded or not ready yet. The program will run again.")
-        main("")
+        main()
     
-    # stopping the program from contuing tweets    
-    if text[0] == ",":
-        return
+    # removing hidden characters
+    text = text.replace("\n", "")
+    text = text.replace("\\n", "")
+    text = text.lstrip()
+    text = repr(text)
 
+    # stopping the program from contuing tweets    
+    if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[0] == "#"or text[-1] == '"':
+        main()
+
+    text += " #beepboop"   
     tweet(text, client1)
 
-for i in range(3):
+try:
+    main()
+except:
     main()
