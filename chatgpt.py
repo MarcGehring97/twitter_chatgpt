@@ -102,7 +102,7 @@ def main(text=""):
     if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[0] == "#"or text[-1] == '"':
         main()
 
-    text += " #beepboop"   
+    text += " #beepboop #R2D2"   
     tweet(text, client1)
 
 try:
