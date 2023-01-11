@@ -61,7 +61,9 @@ def main():
         api = tweepy.API(auth)
 
         # the user ID
+        # can also be any other user
         user_id = "1221912421566046210"
+        user_id = "22703645"
         # find out the user ID at https://tweeterid.com/
         tweets = get_tweets(user_id, client2)[0]
         
@@ -79,12 +81,10 @@ def main():
         try:
 
             text = chatgpt(prompt, key)
-            first_text_done = True
             
             # refining the text with a second prompt
             new_prompt = "Write a new coherent tweet out of this text, but don't make it a quote and don't mention weekdays: " + text
             text = chatgpt(new_prompt, key)
-            second_text_done = True
 
             # removing hidden characters
             text = text.replace("\n", "")
@@ -102,6 +102,10 @@ def main():
             if text[0] == '"' and text[-1] == '"':
                 text = text[1:]
                 text = text[:-1]
+
+            # start over when tweet includes weekdays
+            if "Monday" in text or "monday" in text or "Tuesday" in text or "tuesday" in text or "Wednesday" in text or "wednesday" in text or "Thursday" in text or "thursday" in text or "Friday" in text or "friday" in text or "Saturday" in text or "saturday" in text or "Sunday" in text or "sunday" in text:
+                raise Exception
 
             # stopping the program from posting incoherent tweets
             if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[0] == "#"or text[-1] == '"' or text[0] == "'" or len(text) < 50:
