@@ -20,14 +20,16 @@ def chatgpt(prompt, key):
     
     return response
 
-def get_tweets(user_id, client):
+def get_tweets(user_id, client, max_results=100):
 
-    response = client.get_users_tweets(user_id, max_results=100)
+    response = client.get_users_tweets(user_id, max_results=max_results)
     tweets = []
+    ids = []
     for tweet in response.data:
         tweets.append(tweet.text)
+        ids.append(tweet.id)
     
-    return tweets
+    return (tweets, ids)
 
 def tweet(text, client):
 
@@ -38,13 +40,13 @@ def tweet(text, client):
 def main(text=""):
 
     import os
-    if text != "":
-        os.system("pip3 install random")
-        os.system("pip3 install tweepy")
-        os.system("pip3 install json")
-        os.system("pip3 install openai")
+    if text == "":
+        os.system("pip3 install random >/dev/null 2>&1")
+        os.system("pip3 install tweepy >/dev/null 2>&1")
+        os.system("pip3 install json >/dev/null 2>&1")
+        os.system("pip3 install openai >/dev/null 2>&1")
 
-    import random, tweepy, json, openai
+    import random, tweepy, json, time
 
     keys = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_keys.json"))
     client1 = tweepy.Client(consumer_key=keys["consumer_key"], consumer_secret=keys["consumer_secret"], access_token=keys["access_token"], access_token_secret=keys["access_token_secret"])
@@ -57,7 +59,7 @@ def main(text=""):
     # the user ID of my actual account
     user_id = "1221912421566046210"
     # find out the user ID at https://tweeterid.com/
-    tweets = get_tweets(user_id, client2)
+    tweets = get_tweets(user_id, client2)[0]
     
     # create a random subsample of 10 tweets
     tweet_subsample = random.sample(tweets, 5)
@@ -82,29 +84,115 @@ def main(text=""):
             # refining the text with a second prompt
             new_prompt = "Write a new coherent tweet out of this text, but don't make it a quote and also not only hashtags: " + text
             text = chatgpt(new_prompt, key)
+            # removing hidden characters
+            text = text.replace("\n", "")
+            text = text.replace("\\n", "")
+            text = text.replace("\\", "")
+            text = text.lstrip()
+            text = repr(text)
+
+            # removing leading and trailing 's
+            if text[0] == "'" and text[-1] == "'":
+                text = text[1:]
+                text = text[:-1]
+
+            # removing leading and trailing "s
+            if text[0] == '"' and text[-1] == '"':
+                text = text[1:]
+                text = text[:-1]
+
+            # stopping the program from posting incoherent tweets
+            if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[0] == "#"or text[-1] == '"' or text[0] == "'":
+                raise KeyError
+            
+            # you can uncomment this and the commented section below to write a comment to the posted tweet with a thread
+            # https://stackoverflow.com/questions/9322465/reply-to-tweet-with-tweepy-python
+            # comment = chatgpt("Write a twitter thread to illustrate the meaning of the following tweet: " + text, key)
+
         except Exception:
-            print("The server is overloaded or not ready yet. The program will run again.")
+            print("The server is overloaded or is not ready yet. The program will run again.")
             # reusing the old text
             main(text)
 
     except Exception:
-        print("The server is overloaded or not ready yet. The program will run again.")
-        main()
-    
-    # removing hidden characters
-    text = text.replace("\n", "")
-    text = text.replace("\\n", "")
-    text = text.lstrip()
-    text = repr(text)
-
-    # stopping the program from contuing tweets    
-    if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[0] == "#"or text[-1] == '"':
+        print("The server is overloaded or is not ready yet. The program will run again.")
         main()
 
     text += " #beepboop #R2D2"   
     tweet(text, client1)
+    raise SystemExit(0)
 
-try:
-    main()
-except:
-    main()
+    """
+    time.sleep(15)
+
+    # getting the ID of the this tweet for commeting
+    user_id = "1612802398442897411"
+    tweet_id = get_tweets(user_id, client2, max_results=5)[1][0]
+
+    # cleaning the comment
+    comment = comment.replace("\n", "")
+    comment = comment.replace("\\n", "")
+    comment = comment.lstrip()
+    comment = repr(comment)
+
+    # removing leading and trailing 's
+    if comment[0] == "'" and comment[-1] == "'":
+        comment = comment[1:]
+        comment = comment[:-1]
+
+    # removing leading and trailing "s
+    if comment[0] == '"' and comment[-1] == '"':
+        comment = comment[1:]
+        comment = comment[:-1]
+
+    print(comment)
+
+    thread = []
+    # j is the start index
+    j = 0
+    # every tweet can be a maximum of 280 chars long and we need some extra char spaces for the number of threads counter
+    i = j + 270
+
+    while True:
+
+        # the old start index
+        temp = j
+
+        if i > len(comment):
+            thread.append(comment[temp:j])
+            break
+        
+        message = comment[j:i]
+        # goes from index j to i - 1
+        j = i - 1
+
+        # find the index of the space and save it in j
+        for char in reversed(message):
+            if char == " ":
+                break
+            j -= 1
+        
+        # adding all words up until the sapce, but excluding it
+        thread.append(comment[temp:j])
+
+        # j is the new starting index but needs to be incremented to skip the space
+        j += 1
+        i = j + 270
+
+    print(thread)
+
+    auth = tweepy.OAuthHandler(keys["consumer_key"], keys["consumer_secret"])
+    auth.set_access_token(keys["access_token"], keys["access_token_secret"])
+    api = tweepy.API(auth)
+
+    i = 1
+    for message in thread:
+        message += " (" + str(i) + "/" + len(thread) + ")"
+        print(message)
+        api.update_status(status=message, in_reply_to_status_id=tweet_id, auto_populate_reply_metadata=True)
+        time.sleep(5)
+        i += 1
+    
+    """
+
+main()
