@@ -37,10 +37,11 @@ def tweet(text, client):
     response = client.create_tweet(text=text)
     print(f"https://twitter.com/user/status/{response.data['id']}")
 
-def main(text=""):
+def main(tweeted=True, text="", first_text_done=False, second_text_done=False):
 
     import os
     if text == "":
+        # with ">/dev/null 2>&1" the warning do not appear in the terminal
         os.system("pip3 install random >/dev/null 2>&1")
         os.system("pip3 install tweepy >/dev/null 2>&1")
         os.system("pip3 install json >/dev/null 2>&1")
@@ -51,7 +52,7 @@ def main(text=""):
     keys = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_keys.json"))
     client1 = tweepy.Client(consumer_key=keys["consumer_key"], consumer_secret=keys["consumer_secret"], access_token=keys["access_token"], access_token_secret=keys["access_token_secret"])
 
-    # using the twitter enterprise API bearer token
+    # using the Twitter Enterprise API bearer token
     bearer_token = str(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_bearer_token.txt").read())
     # some methods require enterprise access
     client2 = tweepy.Client(bearer_token=bearer_token)
@@ -72,18 +73,17 @@ def main(text=""):
     prompt = "Look at the following tweets and write another totally new tweet: " + multi_tweets
     # make the tweet sound good
     
-    # a more simple prompt
-    # random_tweet = random.choice(tweets)
-    # prompt = "Write another tweet of the topic of this tweet: " + random_tweet
-    
     try:
-        if text == "":
+        if not first_text_done:
             text = chatgpt(prompt, key)
+            first_text_done = True
         
-        try:
+        if not second_text_done:
             # refining the text with a second prompt
             new_prompt = "Write a new coherent tweet out of this text, but don't make it a quote and also not only hashtags: " + text
             text = chatgpt(new_prompt, key)
+            second_text_done = True
+
             # removing hidden characters
             text = text.replace("\n", "")
             text = text.replace("\\n", "")
@@ -103,31 +103,27 @@ def main(text=""):
 
             # stopping the program from posting incoherent tweets
             if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[0] == "#"or text[-1] == '"' or text[0] == "'":
-                raise KeyError
+                raise Exception
+        
+        comment = chatgpt("Write a twitter thread to illustrate the meaning of the following tweet: " + text, key)
             
-            # you can uncomment this and the commented section below to write a comment to the posted tweet with a thread
-            # https://stackoverflow.com/questions/9322465/reply-to-tweet-with-tweepy-python
-            # comment = chatgpt("Write a twitter thread to illustrate the meaning of the following tweet: " + text, key)
-
-        except Exception:
-            print("The server is overloaded or is not ready yet. The program will run again.")
-            # reusing the old text
-            main(text)
-
     except Exception:
         print("The server is overloaded or is not ready yet. The program will run again.")
-        main()
+        if second_text_done:
+            main(text=text, first_text_done=True, second_text_done=True)
+        elif first_text_done:
+            main(text=text, first_text_done=True)
+        else:
+            main()
 
-    text += " #beepboop #R2D2"   
-    tweet(text, client1)
-    raise SystemExit(0)
-
-    """
+    text += " #BeepBoop #R2D2"   
+    
+    if tweeted == False:
+        tweet(text, client1)
+        tweeted = True
+    # raise SystemExit(0)
+    
     time.sleep(15)
-
-    # getting the ID of the this tweet for commeting
-    user_id = "1612802398442897411"
-    tweet_id = get_tweets(user_id, client2, max_results=5)[1][0]
 
     # cleaning the comment
     comment = comment.replace("\n", "")
@@ -145,54 +141,57 @@ def main(text=""):
         comment = comment[1:]
         comment = comment[:-1]
 
-    print(comment)
+    # removing the word "thread"
+    if comment[:8] == "Thread: ":
+        comment = comment[8:]
+
+    # the starting indices of the actual text
+    indices = []
+
+    for i in range(len(comment) - 1):
+        pair = comment[i:i + 2]
+        if pair in ["1.", "2.", "3.", "4.", "5.", "6.", "7." "8.", "9.", "10."]:
+            indices.append(i + 3)
 
     thread = []
-    # j is the start index
-    j = 0
-    # every tweet can be a maximum of 280 chars long and we need some extra char spaces for the number of threads counter
-    i = j + 270
+    for i in range(len(indices)):
+        if i != len(indices) - 1:
+            thread.append(comment[indices[i]:indices[i + 1] - 3])
+        else:
+            # for the final index
+            thread.append(comment[indices[i]:])
+    
+    keys = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_keys_main.json"))
 
-    while True:
-
-        # the old start index
-        temp = j
-
-        if i > len(comment):
-            thread.append(comment[temp:j])
-            break
-        
-        message = comment[j:i]
-        # goes from index j to i - 1
-        j = i - 1
-
-        # find the index of the space and save it in j
-        for char in reversed(message):
-            if char == " ":
-                break
-            j -= 1
-        
-        # adding all words up until the sapce, but excluding it
-        thread.append(comment[temp:j])
-
-        # j is the new starting index but needs to be incremented to skip the space
-        j += 1
-        i = j + 270
-
-    print(thread)
-
+    # Twitter Enterprise access needed
     auth = tweepy.OAuthHandler(keys["consumer_key"], keys["consumer_secret"])
     auth.set_access_token(keys["access_token"], keys["access_token_secret"])
     api = tweepy.API(auth)
 
+    # the number of items in the thread
+    n = sum(1 for message in thread if len(message) < 270)
+
+    text = text[:len(text) - text[::-1].rfind("#") - 2]
+
+    # getting the ID of the this tweet for commeting
+    user_id = "1612802398442897411"
+
     i = 1
     for message in thread:
-        message += " (" + str(i) + "/" + len(thread) + ")"
-        print(message)
-        api.update_status(status=message, in_reply_to_status_id=tweet_id, auto_populate_reply_metadata=True)
-        time.sleep(5)
-        i += 1
-    
-    """
+        # making sure the thread does't include the original tweet
+        if message == text or message[:10] == text[:10]:
+            n -= 1
+        # the character limit for tweets is 270 => this requirement is most likely satisfied by the individual messages
+        elif len(message) < 270:
+            time.sleep(random.randint(70, 110))
+            # getting the ID from the previous comment
+            tweet_id = get_tweets(user_id, client2, max_results=5)[1][0]
+            # remove the trailing hashtags
+            if message.rfind("#") != -1:
+                # remove all text after the first "#"
+                message = message[:len(message) - message[::-1].rfind("#") - 2]
+            message += " (" + str(i) + "/" + str(n) + ")"
+            api.update_status(status=message, in_reply_to_status_id=tweet_id, auto_populate_reply_metadata=True)
+            i += 1
 
-main()
+main(tweeted = False)
