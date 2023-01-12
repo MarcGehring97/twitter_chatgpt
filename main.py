@@ -56,7 +56,7 @@ def main():
             # you will need elevated access
             keys = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_keys.json"))
             client1 = tweepy.Client(consumer_key=keys["consumer_key"], consumer_secret=keys["consumer_secret"], access_token=keys["access_token"], access_token_secret=keys["access_token_secret"])
-            bearer_token_bot = str(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_bearer_token.txt").read())
+            bearer_token_bot = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_bearer_token.json"))["bearer_token"]
             client2 = tweepy.Client(bearer_token=bearer_token_bot)
             auth = tweepy.OAuthHandler(keys["consumer_key"], keys["consumer_secret"])
             auth.set_access_token(keys["access_token"], keys["access_token_secret"])
@@ -75,7 +75,7 @@ def main():
                 multi_tweets += "Tweet " + str(i + 1) + ": " + tweet_subsample[i] + ", "
             multi_tweets = multi_tweets[:-2]
 
-            key = str(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/openai_key.txt").read())
+            key = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/openai_key.json"))["openai_key"]
             prompt = "Look at the following tweets and write another totally new tweet: " + multi_tweets
             # make the tweet sound good
 
