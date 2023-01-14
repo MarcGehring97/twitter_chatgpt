@@ -43,6 +43,7 @@ def main():
 
         try:
 
+            """
             import os
             
             # with ">/dev/null 2>&1" the warning do not appear in the terminal
@@ -50,6 +51,7 @@ def main():
             os.system("pip3 install tweepy >/dev/null 2>&1")
             os.system("pip3 install json >/dev/null 2>&1")
             os.system("pip3 install openai >/dev/null 2>&1")
+            """
 
             import random, tweepy, json, time
 
@@ -104,10 +106,12 @@ def main():
 
             # start over when tweet includes weekdays
             if "Monday" in text or "monday" in text or "Tuesday" in text or "tuesday" in text or "Wednesday" in text or "wednesday" in text or "Thursday" in text or "thursday" in text or "Friday" in text or "friday" in text or "Saturday" in text or "saturday" in text or "Sunday" in text or "sunday" in text:
+                print("The tweet was filtered out.")
                 raise Exception
 
             # stopping the program from posting incoherent tweets
-            if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[:5] == "Tweet" or text[0] == "#"or text[-1] == '"' or text[0] == "'" or len(text) < 50:
+            if text[0] == "," or text[0] == "-" or text[0] == "." or text[:6] == "Tweet6" or text[:5] == "Tweet" or text[0] == "#"or text[-1] == '"' or text[0] == "'" or len(text) < 50 or text[0] == ":":
+                print("The tweet was filtered out.")
                 raise Exception
             
             comment = chatgpt("Write a twitter thread to illustrate the meaning of the following tweet: " + text, key)
@@ -191,8 +195,9 @@ def main():
                     time.sleep(random.randint(40, 50))
             break
 
-        except Exception:
-            print("Error. The process will start over.")
+        except Exception as exc:
+            print(exc)
+            print("The process will start over.")
             continue
 
 if __name__ == '__main__':
