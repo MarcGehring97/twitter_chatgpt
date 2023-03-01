@@ -15,8 +15,8 @@ def chatgpt(prompt, key):
     openai.api_key = key
 
     # generate a response
-    completion = openai.Completion.create(engine="text-davinci-003", prompt=prompt, max_tokens=1024, n=1, stop=None, temperature=0.5)
-    response = completion.choices[0].text
+    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=[{"role": "user", "content": prompt}])
+    response = completion["choices"][0]["message"]["content"]
     
     return response
 
@@ -78,14 +78,14 @@ def main():
             multi_tweets = multi_tweets[:-2]
 
             key = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/openai_key.json"))["openai_key"]
-            prompt = "Look at the following tweets and write another totally new tweet: " + multi_tweets
+            prompt = "Come up with a new coherent tweet based on the themes of the following tweets using fewer than 250 characters: " + multi_tweets
             # make the tweet sound good
 
             text = chatgpt(prompt, key)
             
             # refining the text with a second prompt
-            new_prompt = "Write a new coherent tweet out of this text, but don't make it a quote and don't mention weekdays: " + text
-            text = chatgpt(new_prompt, key)
+            # new_prompt = "Write a new coherent tweet out of this text, but don't make it a quote and don't mention weekdays: " + text
+            # text = chatgpt(new_prompt, key)
 
             # removing hidden characters
             text = text.replace("\n", "")
@@ -114,10 +114,17 @@ def main():
                 print("The tweet was filtered out.")
                 raise Exception
             
-            comment = chatgpt("Write a twitter thread to illustrate the meaning of the following tweet: " + text, key)
+            comment = chatgpt("Write a twitter thread to illustrate the meaning of the following tweet. Number the tweets with 1., 2., and so on, and make sure that each tweet has fewer than 270 characters." + text, key)
 
-            text += " #BeepBoop #R2D2"   
-            
+            text += " #beepboop #R2D2"   
+
+            green = chatgpt("Tell me with either 'yes' or 'no' if the text has to do with nature or sustainability: " + text, key)
+
+            if green == "Yes" or green == "yes" or green == "Yes." or green == "yes.":
+                text += " #gretaapproves"
+            else:
+                text += " #staydirty"
+
             tweet(text, client1)
             
             time.sleep(20)
@@ -167,7 +174,7 @@ def main():
                     thread.append(comment[indices[i]:])
 
             # the number of items in the thread
-            n = sum(1 for message in thread if len(message) < 270)
+            n = sum(1 for message in thread if len(message) < 270 and message[:10] != text[:10])
 
             for message in thread:
                 # making sure the thread does't include the original tweet
