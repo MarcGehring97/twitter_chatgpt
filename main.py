@@ -9,9 +9,22 @@ crontab -r, contab -l
 * * * * * python3 /Users/Marc/Documents/GitHub/twitter_chatgpt/chatgpt.py
 """
 
+import http.client as httplib
+import openai
+import random, tweepy, json, time
+
+def have_internet():
+    conn = httplib.HTTPSConnection("8.8.8.8", timeout=5)
+    try:
+        conn.request("HEAD", "/")
+        return True
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
 def chatgpt(prompt, key):
 
-    import openai
     openai.api_key = key
 
     # generate a response
@@ -42,18 +55,6 @@ def main():
     while True:
 
         try:
-
-            """
-            import os
-            
-            # with ">/dev/null 2>&1" the warning do not appear in the terminal
-            os.system("pip3 install random >/dev/null 2>&1")
-            os.system("pip3 install tweepy >/dev/null 2>&1")
-            os.system("pip3 install json >/dev/null 2>&1")
-            os.system("pip3 install openai >/dev/null 2>&1")
-            """
-
-            import random, tweepy, json, time
 
             # you will need elevated access
             keys = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/twitter_keys.json"))
@@ -208,4 +209,7 @@ def main():
             continue
 
 if __name__ == '__main__':
-    main()
+    if have_internet():
+        main()
+    else:
+        print("No internet connection.")
