@@ -79,7 +79,7 @@ def main():
             multi_tweets = multi_tweets[:-2]
 
             key = json.load(open("/Users/Marc/Desktop/Past Affairs/Past Universities/SSE Courses/Master Thesis/openai_key.json"))["openai_key"]
-            prompt = "Come up with a new tweet on one coherent topic based on the themes of the following tweets using fewer than 250 characters: " + multi_tweets
+            prompt = "Come up with a new tweet on one coherent topic based on the themes of the following tweets using fewer than 250 characters and making the tweet absurd: " + multi_tweets
             # make the tweet sound good
 
             text = chatgpt(prompt, key)
