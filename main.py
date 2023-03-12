@@ -67,7 +67,8 @@ def main():
 
             # the user ID
             # can also be any other user
-            user_id = "1221912421566046210"
+            # user_id = "1221912421566046210"
+            user_id = "25073877"
             # find out the user ID at https://tweeterid.com/
             tweets = get_tweets(user_id, client2)[0]
             
