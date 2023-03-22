@@ -33,7 +33,7 @@ def chatgpt(prompt, key):
     
     return response
 
-def get_tweets(user_id, client, max_results=3200):
+def get_tweets(user_id, client, max_results=100):
 
     response = client.get_users_tweets(user_id, max_results=max_results)
     tweets = []
