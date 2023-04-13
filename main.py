@@ -52,7 +52,7 @@ def tweet(text, client):
 
 def main():
 
-    while True:
+    for i in range(10):
 
         try:
 
@@ -68,7 +68,7 @@ def main():
             # the user ID
             # can also be any other user
             # user_id = "1221912421566046210"
-            user_id = "25073877"
+            user_id = "44196397"
             # find out the user ID at https://tweeterid.com/
             tweets = get_tweets(user_id, client2)[0]
             
@@ -208,6 +208,8 @@ def main():
             print(exc)
             print("The process will start over.")
             continue
+
+    i += 1
 
 if __name__ == '__main__':
     if have_internet():
